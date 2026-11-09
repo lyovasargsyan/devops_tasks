@@ -25,7 +25,7 @@ task1() {
     #   - port:            the port 80 inside the container must be reachable on port 8081 of your computer
     # Then http://localhost:8081 shows the "Welcome to nginx!" page.
     # (flags to look at: -d  --name  -p host:container)
-    :
+    docker run -d --name lab-web -p 8081:80 nginx:alpine
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -33,7 +33,7 @@ task2() {
     # TASK 2 - LOGS
     # Print the logs of the container lab-web.
     # (The checker opens the page first, so the log has a line  GET / HTTP/1.1 ... )
-    :
+    docker logs lab-web
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -44,7 +44,8 @@ task3() {
     #   2. print the content of that file  (it must show: hello)
     # Tip: the container has a shell:  sh -c '...'   (put your commands inside the quotes)
     # (command to look at: docker exec)
-    :
+    docker exec lab-web sh -c 'echo hello > /tmp/note.txt'
+    docker exec lab-web cat /tmp/note.txt
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ task4() {
     # Careful with the quotes: if you write  echo $GREETING  in double quotes or without quotes,
     # YOUR computer replaces $GREETING before docker starts. Use single quotes:  sh -c 'echo $GREETING'
     # (flags to look at: --rm  -e)
-    :
+    docker run --rm -e GREETING=Salut alpine sh -c 'echo $GREETING'
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -70,7 +71,8 @@ task5() {
     #      and prints /data/note.txt  (it must show: saved)
     # Docker creates the volume for you the first time you use its name.
     # (flag to look at: -v name:/folder)
-    :
+     docker run --rm -v lab-notes:/data alpine sh -c 'echo saved > /data/note.txt'
+     docker run --rm -v lab-notes:/data alpine sh -c 'cat /data/note.txt'
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -84,7 +86,11 @@ task6() {
     #   - READ-ONLY: the container must not be able to change your files (add :ro)
     # Then http://localhost:8082 shows "My Docker site".
     # Tip: a bind mount needs the FULL path of the folder. Use  "$(pwd)/site"
-    :
+    docker run -d \
+            --name lab-site \
+            -p 8082:80 \
+            -v "$(pwd)/site:/usr/share/nginx/html:ro" \
+            nginx:alpine
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -97,7 +103,9 @@ task7() {
     #      and prints it:    wget -qO- http://lab-web2
     #      (it must show the "Welcome to nginx!" page.  Look: you use the NAME of the container as the address!)
     # (commands to look at: docker network create, --network)
-    :
+    docker network create lab-net
+    docker run -d --name lab-web2 --network lab-net nginx:alpine
+    docker run --rm --network lab-net alpine sh -c 'wget -qO- http://lab-web2'
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -108,7 +116,7 @@ task8() {
     # Tip: docker inspect shows a lot of JSON. Use --format (or -f) with a Go template to pick one field:
     #   docker inspect -f '{{.Config.Image}}' <name>
     # Find the right field in the full output of  docker inspect lab-web .
-    :
+    docker inspect -f '{{.Config.Image}}' lab-web
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -122,7 +130,11 @@ task9() {
     #   - memory limit: 64 megabytes
     #   - CPU limit: half of one CPU (0.5)
     # (flags to look at: --memory  --cpus)
-    :
+    docker run -d \
+            --name lab-limited \
+            --memory=64m \
+            --cpus=0.5 \
+            alpine sleep 300
 }
 
 # ---------------------------------------------------------------------------------------------
@@ -133,5 +145,7 @@ task10() {
     #   - the volume       lab-notes
     #   - the network      lab-net
     # (commands to look at: docker rm -f, docker volume rm, docker network rm)
-    :
+    docker rm -f lab-web lab-web2 lab-site lab-limited
+    docker volume rm lab-notes
+    docker network rm lab-net
 }

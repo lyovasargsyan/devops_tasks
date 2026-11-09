@@ -12,3 +12,7 @@
 #   2. all the log files   *.log
 #   3. the Dockerfiles themselves   Dockerfile.*
 #   4. this file   .dockerignore
+junk/
+*.log
+Dockerfile.*
+.dockerignore

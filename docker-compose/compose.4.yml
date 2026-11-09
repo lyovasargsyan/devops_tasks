@@ -31,3 +31,31 @@
 #         restart: unless-stopped
 #
 # The checker looks for these three things, and in the log of web it wants to see:  DB connected (attempt 1)
+services:
+  web:
+    build: ./app                  # the folder that has the Dockerfile of the web app (it is in ./app)
+    ports:
+      - "${WEB_PORT}:8080"                   # host port 8090 -> container port 8080   (written "8090:8080")
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}   # the HOST NAME of the database = the NAME of the db service below!
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+       db:
+        condition: service_healthy
+    restart: unless-stopped
+  db:
+    image: postgres:16-alpine                  # the PostgreSQL image:  postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+    healthcheck:
+     test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U ${DB_USER} -d ${DB_NAME}"]
+     interval: 3s
+     timeout: 3s
+     retries: 10
+volumes:
+  dbdata:

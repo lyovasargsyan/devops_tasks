@@ -15,3 +15,9 @@
 # and NOT in the "shell form":   CMD java App.java
 # Why? The shell form starts a shell first, and then your program is a child of that shell.
 # Then "docker stop" talks to the shell, not to your program.
+
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
+COPY src/App.java /app/App.java
+EXPOSE 8080
+CMD ["java", "App.java"]

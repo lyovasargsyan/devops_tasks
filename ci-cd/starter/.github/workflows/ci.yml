@@ -24,7 +24,12 @@
 # LEVEL 1 - THE TRIGGER:  when does the pipeline start?
 # -----------------------------------------------------------------------------------------------------
 # TODO 1.1  Give the pipeline a name.
+
 # TODO 1.2  Start it ONLY on a push to the branch main (not on every branch).
+name: CI/CD
+on:
+  push:
+    branches: [main]
 #
 # name: CI/CD
 #
@@ -37,7 +42,12 @@
 # LEVEL 5 - SPEED AND SAFETY (top-level settings. They go here, between "on:" and "jobs:")
 # -----------------------------------------------------------------------------------------------------
 # TODO 5.1  The pipeline may only READ the repository.
+permissions:
+  contents: read
 # TODO 5.2  A new push must CANCEL the old run of the same branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 #           (Also in every job of the levels below: timeout-minutes: 10  and  cache: maven)
 #
 # permissions:
@@ -54,52 +64,53 @@
 # Each job runs on its OWN fresh machine, which knows NOTHING about the other jobs.
 # So EVERY job starts with the same 2 steps: download the code, install Java.
 #
-# jobs:
+
 #
 #   # ---------------------------------------------------------------- stage 1: BUILD
-#   build:
-#     runs-on: _____                      # TODO 2.1  a Linux machine: ubuntu-latest
-#     timeout-minutes: 10                 # (level 5) a stuck job must stop
-#     steps:
-#       - uses: actions/checkout@v4       # TODO 2.2  download the code of the repository
-#       - uses: actions/setup-java@v4     # TODO 2.3  install Java 21
-#         with:
-#           distribution: temurin
-#           java-version: '_____'
-#           cache: _____                  # (level 5) maven: do not download the libraries again every time
-#       - name: Compile
-#         run: mvn -B _____               # TODO 3.1  compile
+jobs:
+ build:
+   runs-on: ubuntu-latest                      # TODO 2.1  a Linux machine: ubuntu-latest
+   timeout-minutes: 10                 # (level 5) a stuck job must stop
+   steps:
+     - uses: actions/checkout@v4       # TODO 2.2  download the code of the repository
+     - uses: actions/setup-java@v4     # TODO 2.3  install Java 21
+       with:
+         distribution: temurin
+         java-version: '27'
+         cache: maven                  # (level 5) maven: do not download the libraries again every time
+     - name: Compile
+       run: mvn -B compile               # TODO 3.1  compile
 #
 #   # ---------------------------------------------------------------- stage 2: TEST
-#   test:
-#     needs: _____                        # TODO 3.2  start only after the job "build" succeeded
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 10
-#     steps:
-#       # TODO 2.4  the same 2 steps as in "build": checkout + setup-java (with cache: maven)
-#       - name: Run the tests
-#         run: mvn -B _____               # TODO 3.3  run the tests
-#       - name: Keep the test reports     # TODO 4.1  keep the reports, ALSO when the tests fail
-#         if: _____                       #           always()
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: test-reports
-#           path: target/surefire-reports
+ test:
+   needs: build                        # TODO 3.2  start only after the job "build" succeeded
+   runs-on: ubuntu-latest
+   timeout-minutes: 10
+   steps:
+     # TODO 2.4  the same 2 steps as in "build": checkout + setup-java (with cache: maven)
+     - name: Run the tests
+       run: mvn -B test               # TODO 3.3  run the tests
+     - name: Keep the test reports     # TODO 4.1  keep the reports, ALSO when the tests fail
+       if: always()                       #           always()
+       uses: actions/upload-artifact@v4
+       with:
+         name: test-reports
+         path: target/surefire-reports
 #
 #   # ---------------------------------------------------------------- stage 3: PACKAGE
-#   package:
-#     needs: _____                        # TODO 3.4  start only after the job "test" succeeded
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 10
-#     steps:
-#       # TODO 2.5  the same 2 steps again: checkout + setup-java (with cache: maven)
-#       - name: Build the jar
-#         run: mvn -B package -DskipTests -Dbuild.number=${{ github.run_number }}   # TODO 3.5  the tests already ran: skip them
-#       - name: Keep the jar              # TODO 4.2  keep the jar file
-#         uses: actions/upload-artifact@v4
-#         with:
-#           name: cicd-demo-jar
-#           path: target/_____            #           the name of the jar: cicd-demo.jar
+ package:
+   needs: test                        # TODO 3.4  start only after the job "test" succeeded
+   runs-on: ubuntu-latest
+   timeout-minutes: 10
+   steps:
+     # TODO 2.5  the same 2 steps again: checkout + setup-java (with cache: maven)
+     - name: Build the jar
+       run: mvn -B package -DskipTests -Dbuild.number=${{ github.run_number }}   # TODO 3.5  the tests already ran: skip them
+     - name: Keep the jar              # TODO 4.2  keep the jar file
+       uses: actions/upload-artifact@v4
+       with:
+         name: cicd-demo-jar
+         path: target/cicd-demo.jar            #           the name of the jar: cicd-demo.jar
 
 
 # -----------------------------------------------------------------------------------------------------
@@ -110,21 +121,21 @@
 # TODO 6.3  Use curl -f, so a failed deploy makes the pipeline fail (without -f it stays green).
 # TODO 6.4  A smoke test: call /health of the RUNNING application, and retry (a free server wakes up slowly).
 #
-#   deploy:
-#     needs: _____                        # package
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 15
-#     environment: _____                  # production
-#     steps:
-#       - name: Tell the hosting service to deploy
-#         run: curl -fsS -X POST "${{ secrets._____ }}"          # RENDER_DEPLOY_HOOK_URL
-#       - name: Smoke test
-#         env:
-#           APP_URL: ${{ vars.APP_URL }}
-#         run: |
-#           for i in $(seq 1 30); do
-#             if curl -fsS "$APP_URL/_____"; then exit 0; fi       # the health address
-#             echo "not ready yet ($i/30)"
-#             sleep 10
-#           done
-#           exit 1
+ deploy:
+   needs: package                        # package
+   runs-on: ubuntu-latest
+   timeout-minutes: 15
+   environment: production                  # production
+   steps:
+     - name: Tell the hosting service to deploy
+       run: curl -fsS -X POST "${{ secrets.RENDER_DEPLOY_HOOK_URL }}"          # RENDER_DEPLOY_HOOK_URL
+     - name: Smoke test
+       env:
+         APP_URL: ${{ vars.APP_URL }}
+       run: |
+         for i in $(seq 1 30); do
+           if curl -fsS "$APP_URL/health"; then exit 0; fi      
+           echo "not ready yet ($i/30)"
+           sleep 10
+         done
+

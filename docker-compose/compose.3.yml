@@ -17,3 +17,24 @@
 #
 # The checker looks at your file: the password must NOT be written in it. And everything must still work.
 # Tip: docker compose -f compose.3.yml config   prints the file with all the variables replaced.
+
+services:
+  web:
+    build: ./app                  # the folder that has the Dockerfile of the web app (it is in ./app)
+    ports:
+      - "${WEB_PORT}:8080"                   # host port 8090 -> container port 8080   (written "8090:8080")
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/${DB_NAME}   # the HOST NAME of the database = the NAME of the db service below!
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+
+  db:
+    image: postgres:16-alpine                  # the PostgreSQL image:  postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  dbdata:

@@ -14,3 +14,25 @@
 #
 # The checker runs the container, asks /whoami (it must NOT say root), and waits until Docker
 # says the container is "healthy".
+
+FROM eclipse-temurin:21-jdk
+WORKDIR /app
+COPY src/App.java /app/App.java
+EXPOSE 8080
+
+ENV GREETING=Welcome
+ARG APP_VERSION=1.0
+
+LABEL org.opencontainers.image.title="hello-app"
+LABEL version="$APP_VERSION"
+
+COPY scripts/install-deps.sh app/install-deps.sh
+RUN  sh install-deps.sh
+COPY src/App.java app/App.java
+
+RUN useradd --create-home app && chown -R app:app /app
+USER app
+
+HEALTHCHECK --interval=5s --timeout=3s --retries=3 CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["java", "App.java"]

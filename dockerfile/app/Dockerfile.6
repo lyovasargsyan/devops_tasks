@@ -22,3 +22,31 @@
 #
 # The checker wants: it works, it runs as a normal user, it is healthy, there is NO compiler (javac)
 # in the final image, and the image is clearly smaller than the plain JDK image.
+
+FROM eclipse-temurin:21-jdk AS build
+WORKDIR /build
+COPY src/App.java .
+RUN javac -d classes App.java && jar --create --file app.jar --main-class App -C classes .
+
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+
+ENV GREETING=Welcome
+ARG APP_VERSION=1.0
+
+LABEL org.opencontainers.image.title="hello-app"
+LABEL version="$APP_VERSION"
+
+COPY --from=build /build/app.jar /app/app.jar
+
+COPY scripts/install-deps.sh app/install-deps.sh
+RUN sh app/install-deps.sh
+
+RUN useradd --create-home app && chown -R app:app /app
+USER app
+
+EXPOSE 8080
+
+HEALTHCHECK --interval=5s --timeout=3s --retries=3 CMD curl -f http://localhost:8080/health || exit 1
+
+CMD ["java", "-jar", "app.jar"]

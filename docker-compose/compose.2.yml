@@ -5,12 +5,31 @@
 #
 # Start from your compose.1.yml (copy it here). Then:
 #
-# TODO 1: give the db service a VOLUME for its data. PostgreSQL keeps its files in /var/lib/postgresql/data:
+services:
+  web:
+    build: ./app                  # the folder that has the Dockerfile of the web app (it is in ./app)
+    ports:
+      - "8090:8080"                   # host port 8090 -> container port 8080   (written "8090:8080")
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/visits   # the HOST NAME of the database = the NAME of the db service below!
+      DB_USER: app
+      DB_PASSWORD: secret123
+
+  db:
+    image: postgres:16-alpine                  # the PostgreSQL image:  postgres:16-alpine
+    environment:
+      POSTGRES_DB: visits
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: secret123
+    volumes:
+      - dbdata:/var/lib/postgresql/data
+volumes:
+  dbdata:
+        # TODO 1: give the db service a VOLUME for its data. PostgreSQL keeps its files in /var/lib/postgresql/data:
 #
-#   services:
-#     db:
-#       volumes:
-#         - dbdata:/var/lib/postgresql/data        # "dbdata" is a NAME. The data lives in the volume, not in the container.
+
+
+          # "dbdata" is a NAME. The data lives in the volume, not in the container.
 #
 # TODO 2: at the end of the file, at the TOP LEVEL (no indentation), declare the volume:
 #

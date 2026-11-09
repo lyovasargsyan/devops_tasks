@@ -45,7 +45,7 @@ GET /whoami  ->  user=<the user that runs the program>
 You write **6 Dockerfiles**, one for each level: `app/Dockerfile.1` ... `app/Dockerfile.6`. Each file has a description with a `TODO`.
 
 Check your work:
-
+cd
 ```bash
 ./check.sh        # all 6 levels
 ./check.sh 3      # only level 3
