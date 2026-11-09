@@ -16,43 +16,43 @@
 #  TODO 3.1  The name of the pipeline, and when it starts: on every push to main, and by hand
 #  (workflow_dispatch adds a "Run workflow" button in the Actions tab).
 #
-# name: Deploy to GitHub Pages
-#
-# on:
-#   push:
-#     branches: [ _____ ]
-#   workflow_dispatch:
+ name: Deploy to GitHub Pages
+
+ on:
+   push:
+     branches: [ main ]
+   workflow_dispatch:
 #
 #  TODO 3.2  The permissions. The pipeline may read the code, and it needs two special permissions
 #  to publish a Pages site: "pages: write" and "id-token: write".
 #
-# permissions:
-#   contents: read
-#   pages: _____
-#   id-token: _____
+ permissions:
+   contents: read
+   pages: write
+   id-token: write
 #
 #  TODO 3.3  Only ONE deployment at a time (if two run together, they could publish in the wrong order).
 #  A deployment that already started must NOT be cancelled in the middle.
 #
-# concurrency:
-#   group: pages
-#   cancel-in-progress: _____
+ concurrency:
+   group: pages
+   cancel-in-progress: false
 #
 #  TODO 3.4  The job. It uses the special environment "github-pages", and its steps are the 4 official actions:
 #  checkout (get the files) -> configure-pages -> upload-pages-artifact (pack the site) -> deploy-pages (publish).
 #
-# jobs:
-#   deploy:
-#     runs-on: ubuntu-latest
-#     timeout-minutes: 10
-#     environment:
-#       name: github-pages
-#       url: ${{ steps.deployment.outputs.page_url }}
-#     steps:
-#       - uses: actions/checkout@v4
-#       - uses: actions/configure-pages@v5
-#       - uses: actions/upload-pages-artifact@v3
-#         with:
-#           path: .                         # the folder to publish: the whole repository
-#       - id: deployment                    # the id lets the "url:" above read the address of the site
-#         uses: actions/_____@v4            # deploy-pages
+ jobs:
+   deploy:
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     environment:
+       name: github-pages
+       url: ${{ steps.deployment.outputs.page_url }}
+     steps:
+       - uses: actions/checkout@v4
+       - uses: actions/configure-pages@v5
+       - uses: actions/upload-pages-artifact@v3
+         with:
+           path: github-pages-release      # the folder to publish: the whole repository
+       - id: deployment                    # the id lets the "url:" above read the address of the site
+         uses: actions/deploy-pages@v4            # deploy-pages
