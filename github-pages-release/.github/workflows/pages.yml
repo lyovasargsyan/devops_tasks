@@ -53,6 +53,6 @@ jobs:
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: github-pages-release      # the folder to publish: the whole repository
+          path: './github-pages-release'      # the folder to publish: the whole repository
       - id: deployment                    # the id lets the "url:" above read the address of the site
         uses: actions/deploy-pages@v4            # deploy-pages
