@@ -33,7 +33,7 @@
        - uses: actions/checkout@v4
 
        - name: Pack the site
-         run: zip -r site/index.html -x '.git/*' '.github/*'          # the name of the file: site.zip
+         run: zip -r site.zip . -x '.git/*' '.github/*'          # the name of the file: site.zip
 
        - name: Create the release
          env:
